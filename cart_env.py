@@ -1,12 +1,8 @@
-import gym
 from scipy.integrate import solve_ivp
-import matplotlib.pyplot as plt
+from numpy import sin, cos
 import numpy as np
-from numpy import sin, cos, pi
-import polytope_obstacle
 import polytope as pt
-from gym.envs.classic_control import rendering
-# width=1
+
 
 
 def cart_ode(t, x, v, w):
@@ -22,11 +18,6 @@ class Cart(object):
         self.lr = lr
         self.width = width
 
-
-
-    # def step(self,vleft,vright,time):
-    #     v=(vleft+vright)/2
-    #     w=(vright-vleft)/width
     '''
     step(self,v,w,time) updates the state of the cart
 
@@ -69,7 +60,7 @@ class Cart(object):
         return corners
 
 
-class CartEnv(gym.Env):
+class CartEnv(object):
     def __init__(self, step_time=0.01):
         self.cart = Cart()
         self.obstacles = list()  #list of polytopes
@@ -183,7 +174,3 @@ class CartEnv(gym.Env):
         self.cart.y = 0
         self.cart.theta = 0
         return [0,0,0]
-
-    # def render(self):
-    #     self.cartRender = rendering.FilledPolygon(self.cart.corners_position())
-    #     return self.cartRender

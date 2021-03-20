@@ -1,11 +1,6 @@
-from math import gamma
-# import gym 
 import numpy as np
 import matplotlib.pyplot as plt
-# import custom_gym
 from cart_env import CartEnv
-import polytope as  pt 
-from numpy import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -105,44 +100,40 @@ dqn = DQN()
 
 print('\nCollecting experience...')
 for i_episode in range(300):
-    s = env.reset()
-    ep_r = 0
+    state = env.reset()
+    episode_reward = 0
 
     # x,y used to plot the trajectory
     x=[]
     y=[]
-    step=0
     plt.ion()
     plt.cla()
     ax=plt.gca()
 
-    while True:
-        step+=1
-        a = dqn.choose_action(s)
+    for step in range(1000):
+        action = dqn.choose_action(state)
 
         # take action
-        s_, r, done, info = env.step(a)
+        next_state, reward, done, info = env.step(action)
 
-        x.append(s_[0])
-        y.append(s_[1])
+        x.append(next_state[0])
+        y.append(next_state[1])
 
-        dqn.store_transition(s, a, r, s_)
-        ep_r += r
+        dqn.store_transition(state, action, reward, next_state)
+        episode_reward += reward                     # It's a approximate number, gamma is not considered here
 
         if dqn.memory_counter > MEMORY_CAPACITY:
             dqn.learn()
             if done:
-                print('Ep: ', i_episode,
-                      '| Ep_r: ', round(ep_r, 2))
-
-        if (step==1000):
-            break
+                print('Episode: ', i_episode,
+                      '| Episode_reward: ', round(episode_reward, 2))
 
         if done:
             break
-        s = s_
+        state = next_state
 
 
+    # plot this episode
     ax.set_xlim(-0.5,2)
     ax.set_ylim(-0.5,2)
     plt.title('epoch{0}'.format(i_episode))
