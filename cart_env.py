@@ -4,6 +4,7 @@ import numpy as np
 import polytope as pt
 
 
+R = 0.17
 
 def cart_ode(t, x, v, w):
     return [v * cos(x[2]), v * sin(x[2]), w]
@@ -62,29 +63,57 @@ class Cart(object):
 
 class CartEnv(object):
     def __init__(self, step_time=0.01):
+        # cart_poly,obstacle,goal,frame are used to visualize.
+        # the enlarged, shrinked goal and frame are used to check overlap.
+
         self.cart = Cart()
-        self.obstacles = list()  #list of polytopes
+        self.cart_corners = self.cart.corners_position().T
         self.cart_poly = pt.qhull(self.cart.corners_position().T)
+
+        self.obstacles = list()  
+        self.enlarged_obstacles = list() 
+
         self.goal = pt.qhull(np.array([[1.3, 1.3], [1.3, 2], [2, 1.3], [2,2]]))
+        self.shrinked_goal=pt.qhull(np.array([[1.3+R, 1.3+R], [1.3+R, 2-R], [2-R, 1.3+R], [2-R,2-R]]))
+
         self.frame = pt.qhull(np.array([[-0.5, -0.5], [2, -0.5], [-0.5, 2], [2, 2]]))
+        self.shrinked_frame = pt.qhull(np.array([[-0.5+R, -0.5+R], [2-R, -0.5+R], [-0.5+R, 2-R], [2-R, 2-R]]))
+
         self.step_time = step_time
 
         print('init successful')
 
-    # the following functions update the data of this class
 
     def update_cart_polytope(self):
         self.cart_poly = pt.qhull(self.cart.corners_position().T)
 
-    def set_goal(self, corners):
-        self.goal = pt.qhull(np.asarray(corners))
+    def update_cart_corners(self):
+        self.cart_corners=self.cart.corners_position().T
+    # remove the set goal and set frame method. If want to change the goal and frame, just change the __init__ function.
 
-    def set_frame(self, corners):
-        self.frame = pt.qhull(np.asarray(corners))
+    # def set_goal(self, corners):
+    #     self.goal = pt.qhull(np.asarray(corners))
 
-    def add_obstacle(self, corners):  #2d array, or 2d list
-        p1 = pt.qhull(np.asarray(corners))
+    # def set_frame(self, corners):
+    #     self.frame = pt.qhull(np.asarray(corners))
+
+    def add_obstacle(self, corners):  # (limit:rectangle) 2d array, or 2d list
+        corners= np.asarray(corners)
+
+        p1 = pt.qhull(corners)
         self.obstacles.append(p1)
+
+        xmax=np.max(corners[:,0])+R
+        xmin=np.min(corners[:,0])-R
+
+        ymax=np.max(corners[:,1])+R
+        ymin=np.min(corners[:,1])-R
+
+        corners=np.array([[xmin,ymin],[xmax,ymin],[xmin,ymax],[xmax,ymax]])
+        p2 = pt.qhull(corners)
+        self.enlarged_obstacles.append(p2)
+    '''         
+    # old version check functions
 
     # the following check functions check the polytope conditions
 
@@ -123,6 +152,43 @@ class CartEnv(object):
                 if (np.all(A @ point - b <= 0)):
                     return False
         return True
+    '''
+
+    # simplified version 1: simplify the cart as a circle
+    # def check_goal(self):
+    #     return pt.is_inside(self.shrinked_goal,[self.cart.x,self.cart.y])
+        
+
+    # def check_frame(self):
+    #     return pt.is_inside(self.shrinked_frame,[self.cart.x,self.cart.y])
+
+    # def check_crash(self):  # Ture: cart hasn't crash into the obstacles.
+    #     for obstacle in self.enlarged_obstacles:
+    #         if (pt.is_inside(obstacle,[self.cart.x,self.cart.y])):
+    #             return False
+    #     return True
+
+    
+    # simplified version 2: ignore the case that a corner of an obstacle is in the cart
+    def check_goal(self):
+        for c in self.cart_corners:
+            if (not pt.is_inside(self.goal,c)):
+                return False
+        return True
+        
+
+    def check_frame(self):
+        for c in self.cart_corners:
+            if (not pt.is_inside(self.frame,c)):
+                return False
+        return True
+
+    def check_crash(self):  # Ture: cart hasn't crash into the obstacles.
+        for obstacle in self.obstacles:
+            for c in self.cart_corners:
+                if (pt.is_inside(obstacle,c)):
+                    return False
+        return True
 
     # step(self, action) accept an action and update the state of the cart  
     # after updating the state, it check the obstacles, goal, frame
@@ -145,7 +211,10 @@ class CartEnv(object):
 
         self.cart.step(v, w, self.step_time)
         next_state = [self.cart.x, self.cart.y, self.cart.theta]
-        self.update_cart_polytope()
+        # self.update_cart_polytope() 
+        self.update_cart_corners()
+
+
         done = False
         info = []
         # reward = 0 

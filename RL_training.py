@@ -96,7 +96,7 @@ dqn = DQN()
 # To act greedily, just load the pkl file saved from a training. and set gamma =1
 # dqn.eval_net=torch.load('xxxxxxx')
 # GAMMA =1
-
+import time 
 
 print('\nCollecting experience...')
 for i_episode in range(300):
@@ -109,6 +109,7 @@ for i_episode in range(300):
     plt.ion()
     plt.cla()
     ax=plt.gca()
+    t1=time.time()
 
     for step in range(1000):
         action = dqn.choose_action(state)
@@ -129,16 +130,22 @@ for i_episode in range(300):
                       '| Episode_reward: ', round(episode_reward, 2))
 
         if done:
+            print(info)
+            print(step)
             break
         state = next_state
-
+    t2=time.time()
+    print(t2-t1)
 
     # plot this episode
+    env.update_cart_polytope()
     ax.set_xlim(-0.5,2)
     ax.set_ylim(-0.5,2)
     plt.title('epoch{0}'.format(i_episode))
     ax.plot(x,y)
     env.cart_poly.plot(ax,color='green')
+
+    # env.enlarged_ploytope.plot
     env.goal.plot(ax,alpha=0.3,color='red')
     env.obstacles[0].plot(ax,alpha=1,color='pink')
     plt.pause(0.5)
