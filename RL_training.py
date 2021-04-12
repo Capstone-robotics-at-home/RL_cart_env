@@ -27,11 +27,14 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(N_STATES, 15)
         self.fc1.weight.data.normal_(0, 0.1)   # initialization
+        self.fc2 = nn.Linear(15, 15)
+        self.fc1.weight.data.normal_(0, 0.1)   # initialization
         self.out = nn.Linear(15, N_ACTIONS)
         self.out.weight.data.normal_(0, 0.1)   # initialization
-
     def forward(self, x):
         x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
         x = F.relu(x)
         actions_value = self.out(x)
         return actions_value
@@ -130,12 +133,12 @@ for i_episode in range(300):
                       '| Episode_reward: ', round(episode_reward, 2))
 
         if done:
-            print(info)
-            print(step)
+            print('teminal reason: ',info)
+            print('num of steps: ',step)
             break
         state = next_state
     t2=time.time()
-    print(t2-t1)
+    print('time for this epoch: ',t2-t1)
 
     # plot this episode
     env.update_cart_polytope()
@@ -148,7 +151,7 @@ for i_episode in range(300):
     # env.enlarged_ploytope.plot
     env.goal.plot(ax,alpha=0.3,color='red')
     env.obstacles[0].plot(ax,alpha=1,color='pink')
-    plt.pause(0.5)
+    plt.pause(0.2)
 
 
 # save the neural network

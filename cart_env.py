@@ -2,9 +2,17 @@ from scipy.integrate import solve_ivp
 from numpy import sin, cos
 import numpy as np
 import polytope as pt
-
+from numpy import pi
 
 R = 0.17
+
+def constrain(angle):
+    if (angle>pi):
+        return (angle+pi)%(2*pi)-pi
+    elif (angle<=-pi):
+        return (angle-pi)%(-2*pi)+pi
+    else:
+        return angle
 
 def cart_ode(t, x, v, w):
     return [v * cos(x[2]), v * sin(x[2]), w]
@@ -34,6 +42,7 @@ class Cart(object):
         self.x = sol.y[0, :][-1]
         self.y = sol.y[1, :][-1]
         self.theta = sol.y[2, :][-1]
+        self.theta = constrain(self.theta) # constrain theta in (-pi,pi]
 
     '''
     corners_position(self) computes the 4 corners of the cart

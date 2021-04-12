@@ -5,5 +5,4 @@ For RL, it is not successful when an obstacle is added. Maybe the reward or the 
 For the environment, I doesn't use gym, just code a simple environment based on the polytope library.
 
 ## Update: simplification
-Consider the jetbot in a circle, and check whether the circle covers the obstacles.
-
+Ignore the case that a corner of the obstacle is in the cart.
